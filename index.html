@@ -284,6 +284,7 @@ body{background:radial-gradient(circle at 38% 0,#fff 0,#f8faff 35%,#f4f7fc 100%)
 .sidebar-divider{background:#edf1f7}
 .sidebar-footer{border-top:0;padding:18px}
 .sidebar-user{color:#8a95aa}
+.app-version{font-size:11px;color:#9aa6ba;text-align:center;margin:6px 0 10px;letter-spacing:.2px}
 .sidebar-logout{background:#fff2f2}
 .main-content{margin-left:274px;padding:28px 30px 34px;background:transparent;min-width:0;max-width:100%;overflow-x:hidden}
 .app-layout,.tab-content,.main-header>*,.dashboard-row>*,.summary-card{min-width:0}
@@ -454,6 +455,7 @@ body{background:radial-gradient(circle at 38% 0,#fff 0,#f8faff 35%,#f4f7fc 100%)
   </nav>
   <div class="sidebar-footer">
     <div class="sidebar-user" id="userEmail"></div>
+    <div class="app-version">Keuanganku v2.0</div>
     <button class="sidebar-logout" onclick="handleLogout()">🚪 Keluar</button>
   </div>
 </aside>
@@ -599,8 +601,9 @@ body{background:radial-gradient(circle at 38% 0,#fff 0,#f8faff 35%,#f4f7fc 100%)
     <div class="modal-header"><h2>⚙ Atur Kategori Budget</h2><button class="modal-close" onclick="closeModal('budgetCategoryModal')">✕</button></div>
     <div class="modal-body">
       <div style="padding:12px 14px;background:#f5f8ff;border:1px solid #dce8ff;border-radius:10px;margin-bottom:14px;color:var(--txt2);font-size:13px;line-height:1.55">
-        Tentukan sendiri setiap kategori masuk ke <b>Kebutuhan</b>, <b>Keinginan</b>, atau <b>Tabungan</b>. Pengaturan ini tersimpan di akunmu dan langsung dipakai untuk perhitungan budget 50/30/20.
+        Tentukan sendiri setiap kategori masuk ke <b>Kebutuhan</b>, <b>Keinginan</b>, atau <b>Tabungan</b>. Pengaturan ini tersimpan di akunmu dan langsung dipakai untuk perhitungan budget 50/30/20. Kategori baru bisa ditambahkan dari sini maupun saat mencatat transaksi.
       </div>
+      <button type="button" class="btn-primary" onclick="openAddCategoryModal('budget')" style="width:100%;margin-bottom:12px">＋ Tambah Kategori Baru</button>
       <div id="budgetCategorySettingsList"></div>
     </div>
     <div style="display:flex;gap:8px;padding:16px 20px;border-top:1px solid var(--border)">
@@ -671,8 +674,9 @@ body{background:radial-gradient(circle at 38% 0,#fff 0,#f8faff 35%,#f4f7fc 100%)
             <option value="Fotografi">📸 Fotografi</option>
             <option value="Lainnya">📦 Lainnya</option>
           </select>
-          <div style="margin-top:6px">
-            <button type="button" onclick="openManageCategories()" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:12px;padding:0">🗑️ Kelola Kategori</button>
+          <div style="margin-top:7px;display:flex;gap:14px;flex-wrap:wrap">
+            <button type="button" onclick="openAddCategoryModal('transaction')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:12px;padding:0">＋ Tambah Kategori Baru</button>
+            <button type="button" onclick="openManageCategories()" style="background:none;border:none;color:var(--txt2);cursor:pointer;font-size:12px;padding:0">⚙ Kelola Kategori</button>
           </div>
         </div>
         <div>
@@ -886,11 +890,44 @@ body{background:radial-gradient(circle at 38% 0,#fff 0,#f8faff 35%,#f4f7fc 100%)
   </div>
 </div>
 
+<!-- Add Category Modal -->
+<div id="addCategoryModal" class="modal-overlay" onclick="if(event.target===this)closeModal('addCategoryModal')">
+  <div class="modal-content txn-modal" style="max-width:480px">
+    <div class="modal-header"><h2>＋ Tambah Kategori</h2><button class="modal-close" onclick="closeModal('addCategoryModal')">✕</button></div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <label style="display:block;font-size:12px;color:var(--txt2);margin-bottom:4px;font-weight:500">Nama Kategori</label>
+          <input type="text" id="newCategoryName" placeholder="Contoh: Asuransi">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;color:var(--txt2);margin-bottom:4px;font-weight:500">Emoji</label>
+          <input type="text" id="newCategoryEmoji" placeholder="Contoh: 🛡️" maxlength="8">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;color:var(--txt2);margin-bottom:4px;font-weight:500">Kelompok Budget</label>
+          <select id="newCategoryBudgetGroup">
+            <option value="need">🟢 Kebutuhan</option>
+            <option value="want">🔵 Keinginan</option>
+            <option value="save">🟣 Tabungan</option>
+          </select>
+          <div style="font-size:11px;color:var(--txt2);margin-top:6px">Kategori akan otomatis tersedia di Transaksi dan perhitungan Budget.</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;padding:16px 20px;border-top:1px solid var(--border)">
+      <button class="btn-gradient" onclick="saveNewCategory()" style="flex:1">💾 Simpan Kategori</button>
+      <button class="btn-outline" onclick="closeModal('addCategoryModal')" style="flex:1">Batal</button>
+    </div>
+  </div>
+</div>
+
 <!-- Manage Categories Modal -->
 <div id="manageCatModal" class="modal-overlay" onclick="if(event.target===this)closeModal('manageCatModal')">
   <div class="modal-content txn-modal">
-    <div class="modal-header"><h2>🗑️ Kelola Kategori</h2><button class="modal-close" onclick="closeModal('manageCatModal')">✕</button></div>
+    <div class="modal-header"><h2>⚙ Kelola Kategori</h2><button class="modal-close" onclick="closeModal('manageCatModal')">✕</button></div>
     <div class="modal-body">
+      <button type="button" class="btn-primary" onclick="closeModal('manageCatModal');openAddCategoryModal('manage')" style="width:100%;margin-bottom:12px">＋ Tambah Kategori Baru</button>
       <div id="manageCatList"></div>
     </div>
   </div>
@@ -959,12 +996,38 @@ function onBankCustom(){
     document.getElementById('modalTxnBank').value=name;
   }
 }
-var TXN_CATEGORIES={'Makan':'🍽️','Transport':'🚗','Belanja':'🛒','Hiburan':'🎮','Kesehatan':'🏥','Pendidikan':'📚','Utilitas':'💡','Hutang':'💳','Pembayaran Hutang':'💳','Tabungan':'🏦','Lainnya':'📦'};
-var DEFAULT_BUDGET_CATEGORY_MAP={
-  'Makan':'need','Makan & Minum':'need','Groceries':'need','Transport':'need','Kesehatan':'need','Utilitas':'need','Pulsa & Internet':'need','Tagihan':'need','Pendidikan':'need','Keluarga':'need','Hewan Peliharaan':'need',
-  'Belanja':'want','Hiburan':'want','Hadiah':'want','Olahraga':'want','Travel':'want','Kecantikan':'want','Fotografi':'want','Lainnya':'want',
-  'Hutang':'save','Pembayaran Hutang':'save','Tabungan':'save','Investasi':'save','Sedekah':'save'
-};
+var DEFAULT_EXPENSE_CATEGORIES=[
+  {name:'Makan & Minum',emoji:'🍽️',group:'need'},
+  {name:'Groceries',emoji:'🛒',group:'need'},
+  {name:'Transport',emoji:'🚗',group:'need'},
+  {name:'Kesehatan',emoji:'🏥',group:'need'},
+  {name:'Pendidikan',emoji:'📚',group:'need'},
+  {name:'Utilitas',emoji:'💡',group:'need'},
+  {name:'Pulsa & Internet',emoji:'📱',group:'need'},
+  {name:'Tagihan',emoji:'🧾',group:'need'},
+  {name:'Keluarga',emoji:'👨‍👩‍👧‍👦',group:'need'},
+  {name:'Hewan Peliharaan',emoji:'🐾',group:'need'},
+  {name:'Belanja',emoji:'🛍️',group:'want'},
+  {name:'Hiburan',emoji:'🎮',group:'want'},
+  {name:'Hadiah',emoji:'🎁',group:'want'},
+  {name:'Olahraga',emoji:'⚽',group:'want'},
+  {name:'Travel',emoji:'✈️',group:'want'},
+  {name:'Kecantikan',emoji:'💄',group:'want'},
+  {name:'Fotografi',emoji:'📸',group:'want'},
+  {name:'Lainnya',emoji:'📦',group:'want'},
+  {name:'Pembayaran Hutang',emoji:'💳',group:'save'},
+  {name:'Tabungan',emoji:'🏦',group:'save'},
+  {name:'Investasi',emoji:'📈',group:'save'},
+  {name:'Sedekah',emoji:'🤲',group:'save'}
+];
+var LEGACY_CATEGORY_ALIASES={'Makan':'Makan & Minum','Pulsa':'Pulsa & Internet','Hewan':'Hewan Peliharaan','Hutang':'Pembayaran Hutang'};
+var TXN_CATEGORIES={};
+DEFAULT_EXPENSE_CATEGORIES.forEach(function(c){TXN_CATEGORIES[c.name]=c.emoji;});
+Object.keys(LEGACY_CATEGORY_ALIASES).forEach(function(oldName){TXN_CATEGORIES[oldName]=TXN_CATEGORIES[LEGACY_CATEGORY_ALIASES[oldName]]||'📦';});
+var DEFAULT_BUDGET_CATEGORY_MAP={};
+DEFAULT_EXPENSE_CATEGORIES.forEach(function(c){DEFAULT_BUDGET_CATEGORY_MAP[c.name]=c.group;});
+Object.keys(LEGACY_CATEGORY_ALIASES).forEach(function(oldName){DEFAULT_BUDGET_CATEGORY_MAP[oldName]=DEFAULT_BUDGET_CATEGORY_MAP[LEGACY_CATEGORY_ALIASES[oldName]]||'want';});
+function escapeHtml(value){return String(value==null?'':value).replace(/[&<>'"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch];});}
 function getBudgetCategoryMap(){
   var saved=(window.DATA&&window.DATA.budgetCategoryMap)||{};
   var merged={};
@@ -986,9 +1049,8 @@ function calcBudgetSpent(txns){
   return totals;
 }
 function getAllExpenseCategories(){
-  var base=['Makan & Minum','Groceries','Transport','Belanja','Hiburan','Kesehatan','Pendidikan','Utilitas','Pulsa & Internet','Tagihan','Hadiah','Olahraga','Travel','Investasi','Sedekah','Keluarga','Hewan Peliharaan','Kecantikan','Fotografi','Lainnya','Pembayaran Hutang','Tabungan'];
+  var base=DEFAULT_EXPENSE_CATEGORIES.map(function(c){return c.name;});
   (window.DATA.customCategories||[]).forEach(function(c){if(c&&c.name&&base.indexOf(c.name)<0)base.push(c.name);});
-  Object.keys(getBudgetCategoryMap()).forEach(function(c){if(base.indexOf(c)<0)base.push(c);});
   return base;
 }
 function openBudgetCategorySettings(){
@@ -1001,8 +1063,8 @@ function openBudgetCategorySettings(){
     var selected=map[cat]||'want';
     var emoji=TXN_CATEGORIES[cat]||'📦';
     html+='<div style="display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,230px);gap:12px;align-items:center;padding:11px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--input-bg)">';
-    html+='<div style="font-size:14px;font-weight:600">'+emoji+' '+cat+'</div>';
-    html+='<select class="budget-category-select" data-category="'+cat.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">';
+    html+='<div style="font-size:14px;font-weight:600">'+escapeHtml(emoji)+' '+escapeHtml(cat)+'</div>';
+    html+='<select class="budget-category-select" data-category="'+escapeHtml(cat)+'">';
     ['need','want','save'].forEach(function(g){html+='<option value="'+g+'" '+(selected===g?'selected':'')+'>'+groupEmoji[g]+' '+groupLabels[g]+'</option>';});
     html+='</select></div>';
   });
@@ -1018,6 +1080,18 @@ function saveBudgetCategorySettings(){
   renderBudget();
   if(typeof renderDashboard==='function')renderDashboard();
   showToast('Kategori budget berhasil disimpan');
+}
+function migrateCategoryUsage(oldName,newName){
+  Object.keys(window.DATA.transactions||{}).forEach(function(monthKey){
+    (window.DATA.transactions[monthKey]||[]).forEach(function(tx){if(tx.category===oldName)tx.category=newName;});
+  });
+}
+function countCategoryUsage(name){
+  var count=0;
+  Object.keys(window.DATA.transactions||{}).forEach(function(monthKey){
+    (window.DATA.transactions[monthKey]||[]).forEach(function(tx){if(tx.category===name)count++;});
+  });
+  return count;
 }
 var INVEST_CATEGORIES={'Saham':'📈','Reksadana':'📊','Krypto':'🪙','Emas':'🥇','Tabungan':'🏦','Deposito':'💰','Arisan':'👥'};
 
@@ -1077,17 +1151,55 @@ function openAddTransactionModal(){
   document.getElementById('addTransactionModal').classList.add('open');
 }
 
-function updateTxnCategories(){
+function updateTxnCategories(selectedCategory){
   var type=document.getElementById('modalTxnType').value;
   var catSel=document.getElementById('modalTxnCategory');
+  var previous=selectedCategory||catSel.value;
   var incomeCats=['Gaji Pokok','Tunjangan','Side Hustle','Bisnis','Freelance','Investasi','Bonus','Lainnya'];
-  var expCats=['Makan & Minum','Groceries','Transport','Belanja','Hiburan','Kesehatan','Pendidikan','Utilitas','Pulsa & Internet','Tagihan','Hadiah','Olahraga','Travel','Investasi','Sedekah','Keluarga','Hewan Peliharaan','Kecantikan','Fotografi','Lainnya'];
+  var expCats=getAllExpenseCategories();
   catSel.innerHTML='';
-  if(type==='inc'){
-    incomeCats.forEach(function(c){catSel.innerHTML+='<option value="'+c+'">'+c+'</option>';});
-  }else{
-    expCats.forEach(function(c){catSel.innerHTML+='<option value="'+c+'">'+c+'</option>';});
+  var list=type==='inc'?incomeCats:expCats;
+  list.forEach(function(c){
+    var emoji=type==='inc'?'':(TXN_CATEGORIES[c]||'📦')+' ';
+    var opt=document.createElement('option');opt.value=c;opt.textContent=emoji+c;catSel.appendChild(opt);
+  });
+  if(type!=='inc'){
+    var addOpt=document.createElement('option');addOpt.value='__add_category__';addOpt.textContent='＋ Tambah kategori baru';catSel.appendChild(addOpt);
   }
+  if(previous&&Array.from(catSel.options).some(function(o){return o.value===previous;}))catSel.value=previous;
+  else if(catSel.options.length)catSel.selectedIndex=0;
+  catSel.onchange=function(){if(this.value==='__add_category__'){openAddCategoryModal('transaction');}};
+}
+
+var addCategoryOrigin='budget';
+function openAddCategoryModal(origin){
+  addCategoryOrigin=origin||'budget';
+  var nameEl=document.getElementById('newCategoryName');
+  var emojiEl=document.getElementById('newCategoryEmoji');
+  nameEl.value='';emojiEl.value='';
+  document.getElementById('newCategoryBudgetGroup').value='need';
+  document.getElementById('addCategoryModal').classList.add('open');
+  setTimeout(function(){nameEl.focus();},50);
+}
+function saveNewCategory(){
+  var name=document.getElementById('newCategoryName').value.trim();
+  var emoji=document.getElementById('newCategoryEmoji').value.trim()||'📦';
+  var group=document.getElementById('newCategoryBudgetGroup').value;
+  if(!name){showToast('Masukkan nama kategori','error');return;}
+  var all=getAllExpenseCategories().map(function(x){return String(x).toLowerCase();});
+  if(all.indexOf(name.toLowerCase())>=0){showToast('Kategori tersebut sudah tersedia','error');return;}
+  window.DATA.customCategories=window.DATA.customCategories||[];
+  window.DATA.customCategories.push({name:name,emoji:emoji});
+  window.DATA.budgetCategoryMap=window.DATA.budgetCategoryMap||{};
+  window.DATA.budgetCategoryMap[name]=group;
+  TXN_CATEGORIES[name]=emoji;
+  saveDataToCloud();
+  closeModal('addCategoryModal');
+  updateTxnCategories(name);
+  if(addCategoryOrigin==='budget'){openBudgetCategorySettings();}
+  else if(addCategoryOrigin==='manage'){openManageCategories();}
+  renderAll();
+  showToast('Kategori "'+name+'" berhasil ditambahkan');
 }
 
 function openManageCategories(){
@@ -1118,32 +1230,46 @@ function editCategory(index){
   if(!cat)return;
   var newName=prompt('Nama kategori:',cat.name);
   if(newName===null)return;
-  var newEmoji=prompt('Emoji:',cat.emoji);
+  newName=newName.trim();
+  var newEmoji=prompt('Emoji:',cat.emoji||'📦');
   if(newEmoji===null)return;
+  newEmoji=newEmoji.trim()||'📦';
   if(!newName){showToast('Nama tidak boleh kosong','error');return;}
+  var duplicate=getAllExpenseCategories().some(function(name){return name.toLowerCase()===newName.toLowerCase()&&name!==cat.name;});
+  if(duplicate){showToast('Nama kategori sudah digunakan','error');return;}
+  var oldName=cat.name;
   window.DATA.customCategories[index].name=newName;
   window.DATA.customCategories[index].emoji=newEmoji;
   window.DATA.budgetCategoryMap=window.DATA.budgetCategoryMap||{};
-  if(window.DATA.budgetCategoryMap[cat.name]){window.DATA.budgetCategoryMap[newName]=window.DATA.budgetCategoryMap[cat.name];delete window.DATA.budgetCategoryMap[cat.name];}
+  var oldGroup=window.DATA.budgetCategoryMap[oldName]||getBudgetCategoryMap()[oldName]||'want';
+  window.DATA.budgetCategoryMap[newName]=oldGroup;
+  if(oldName!==newName)delete window.DATA.budgetCategoryMap[oldName];
+  migrateCategoryUsage(oldName,newName);
   TXN_CATEGORIES[newName]=newEmoji;
-  delete TXN_CATEGORIES[cat.name];
+  if(oldName!==newName)delete TXN_CATEGORIES[oldName];
   saveDataToCloud();
   openManageCategories();
-  updateTxnCategories();
-  showToast('Kategori berhasil diupdate');
+  updateTxnCategories(newName);
+  renderAll();
+  showToast('Kategori berhasil diperbarui');
 }
 
 function deleteCategory(index){
   var cat=window.DATA.customCategories[index];
   if(!cat)return;
-  if(!confirm('Hapus kategori "'+cat.name+'"?'))return;
+  var usage=countCategoryUsage(cat.name);
+  var message='Hapus kategori "'+cat.name+'"?';
+  if(usage>0)message+='\n\nKategori ini dipakai oleh '+usage+' transaksi. Transaksi tersebut akan dipindahkan ke kategori Lainnya.';
+  if(!confirm(message))return;
+  if(usage>0)migrateCategoryUsage(cat.name,'Lainnya');
   window.DATA.customCategories.splice(index,1);
   if(window.DATA.budgetCategoryMap)delete window.DATA.budgetCategoryMap[cat.name];
   delete TXN_CATEGORIES[cat.name];
   saveDataToCloud();
   openManageCategories();
-  updateTxnCategories();
-  showToast('Kategori berhasil dihapus');
+  updateTxnCategories('Lainnya');
+  renderAll();
+  showToast(usage>0?'Kategori dihapus dan transaksi dipindahkan ke Lainnya':'Kategori berhasil dihapus');
 }
 
 function onCategoryChange(){
