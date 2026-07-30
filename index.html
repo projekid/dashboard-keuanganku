@@ -404,6 +404,10 @@ body{background:radial-gradient(circle at 38% 0,#fff 0,#f8faff 35%,#f4f7fc 100%)
 .emoji-picker-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
 .emoji-picker-grid span{font-size:20px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;transition:background .15s}
 .emoji-picker-grid span:hover{background:#f1f5f9}
+
+@media(max-width:600px){
+  #budgetCategorySettingsList>div{grid-template-columns:1fr!important;gap:7px!important}
+}
 </style>
 </head>
 <body>
@@ -565,7 +569,11 @@ body{background:radial-gradient(circle at 38% 0,#fff 0,#f8faff 35%,#f4f7fc 100%)
   <!-- BUDGET TAB -->
   <div id="tabBudget" class="tab-content">
     <div class="tab-header-bar">
-      <h2>📊 Budget</h2>
+      <div>
+        <h2>📊 Budget</h2>
+        <p style="margin:5px 0 0;color:var(--txt2);font-size:13px">Kelompok budget dihitung dari kategori yang kamu tentukan sendiri.</p>
+      </div>
+      <button class="btn-primary" onclick="openBudgetCategorySettings()">⚙ Atur Kategori Budget</button>
     </div>
     <div class="budget-grid" id="budgetGrid"></div>
   </div>
@@ -584,6 +592,23 @@ body{background:radial-gradient(circle at 38% 0,#fff 0,#f8faff 35%,#f4f7fc 100%)
 </div>
 
 <!-- MODALS -->
+
+<!-- Budget Category Settings Modal -->
+<div id="budgetCategoryModal" class="modal-overlay" onclick="if(event.target===this)closeModal('budgetCategoryModal')">
+  <div class="modal-content" style="max-width:720px">
+    <div class="modal-header"><h2>⚙ Atur Kategori Budget</h2><button class="modal-close" onclick="closeModal('budgetCategoryModal')">✕</button></div>
+    <div class="modal-body">
+      <div style="padding:12px 14px;background:#f5f8ff;border:1px solid #dce8ff;border-radius:10px;margin-bottom:14px;color:var(--txt2);font-size:13px;line-height:1.55">
+        Tentukan sendiri setiap kategori masuk ke <b>Kebutuhan</b>, <b>Keinginan</b>, atau <b>Tabungan</b>. Pengaturan ini tersimpan di akunmu dan langsung dipakai untuk perhitungan budget 50/30/20.
+      </div>
+      <div id="budgetCategorySettingsList"></div>
+    </div>
+    <div style="display:flex;gap:8px;padding:16px 20px;border-top:1px solid var(--border)">
+      <button class="btn-gradient" onclick="saveBudgetCategorySettings()" style="flex:1">💾 Simpan Pengaturan</button>
+      <button class="btn-outline" onclick="closeModal('budgetCategoryModal')" style="flex:1">Batal</button>
+    </div>
+  </div>
+</div>
 
 <!-- Bank Detail Modal -->
 <div id="bankModal" class="modal-overlay" onclick="if(event.target===this)closeModal('bankModal')">
@@ -935,9 +960,65 @@ function onBankCustom(){
   }
 }
 var TXN_CATEGORIES={'Makan':'🍽️','Transport':'🚗','Belanja':'🛒','Hiburan':'🎮','Kesehatan':'🏥','Pendidikan':'📚','Utilitas':'💡','Hutang':'💳','Pembayaran Hutang':'💳','Tabungan':'🏦','Lainnya':'📦'};
-var NEED_CATS=['Makan','Transport','Utilitas','Kesehatan'];
-var WANT_CATS=['Belanja','Hiburan','Lainnya'];
-var SAVE_CATS=['Hutang','Tabungan','Pendidikan'];
+var DEFAULT_BUDGET_CATEGORY_MAP={
+  'Makan':'need','Makan & Minum':'need','Groceries':'need','Transport':'need','Kesehatan':'need','Utilitas':'need','Pulsa & Internet':'need','Tagihan':'need','Pendidikan':'need','Keluarga':'need','Hewan Peliharaan':'need',
+  'Belanja':'want','Hiburan':'want','Hadiah':'want','Olahraga':'want','Travel':'want','Kecantikan':'want','Fotografi':'want','Lainnya':'want',
+  'Hutang':'save','Pembayaran Hutang':'save','Tabungan':'save','Investasi':'save','Sedekah':'save'
+};
+function getBudgetCategoryMap(){
+  var saved=(window.DATA&&window.DATA.budgetCategoryMap)||{};
+  var merged={};
+  Object.keys(DEFAULT_BUDGET_CATEGORY_MAP).forEach(function(k){merged[k]=DEFAULT_BUDGET_CATEGORY_MAP[k];});
+  Object.keys(saved).forEach(function(k){merged[k]=saved[k];});
+  return merged;
+}
+function getBudgetGroupForTransaction(tx){
+  if(tx.type==='debt'||tx.type==='sav')return 'save';
+  var map=getBudgetCategoryMap();
+  return map[tx.category]||'want';
+}
+function calcBudgetSpent(txns){
+  var totals={need:0,want:0,save:0};
+  (txns||[]).forEach(function(tx){
+    var group=getBudgetGroupForTransaction(tx);
+    totals[group]=(totals[group]||0)+Number(tx.amount||0);
+  });
+  return totals;
+}
+function getAllExpenseCategories(){
+  var base=['Makan & Minum','Groceries','Transport','Belanja','Hiburan','Kesehatan','Pendidikan','Utilitas','Pulsa & Internet','Tagihan','Hadiah','Olahraga','Travel','Investasi','Sedekah','Keluarga','Hewan Peliharaan','Kecantikan','Fotografi','Lainnya','Pembayaran Hutang','Tabungan'];
+  (window.DATA.customCategories||[]).forEach(function(c){if(c&&c.name&&base.indexOf(c.name)<0)base.push(c.name);});
+  Object.keys(getBudgetCategoryMap()).forEach(function(c){if(base.indexOf(c)<0)base.push(c);});
+  return base;
+}
+function openBudgetCategorySettings(){
+  var map=getBudgetCategoryMap();
+  var cats=getAllExpenseCategories();
+  var groupLabels={need:'Kebutuhan',want:'Keinginan',save:'Tabungan'};
+  var groupEmoji={need:'🟢',want:'🔵',save:'🟣'};
+  var html='';
+  cats.forEach(function(cat){
+    var selected=map[cat]||'want';
+    var emoji=TXN_CATEGORIES[cat]||'📦';
+    html+='<div style="display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,230px);gap:12px;align-items:center;padding:11px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--input-bg)">';
+    html+='<div style="font-size:14px;font-weight:600">'+emoji+' '+cat+'</div>';
+    html+='<select class="budget-category-select" data-category="'+cat.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">';
+    ['need','want','save'].forEach(function(g){html+='<option value="'+g+'" '+(selected===g?'selected':'')+'>'+groupEmoji[g]+' '+groupLabels[g]+'</option>';});
+    html+='</select></div>';
+  });
+  document.getElementById('budgetCategorySettingsList').innerHTML=html;
+  document.getElementById('budgetCategoryModal').classList.add('open');
+}
+function saveBudgetCategorySettings(){
+  var map={};
+  document.querySelectorAll('.budget-category-select').forEach(function(sel){map[sel.getAttribute('data-category')]=sel.value;});
+  window.DATA.budgetCategoryMap=map;
+  saveDataToCloud();
+  closeModal('budgetCategoryModal');
+  renderBudget();
+  if(typeof renderDashboard==='function')renderDashboard();
+  showToast('Kategori budget berhasil disimpan');
+}
 var INVEST_CATEGORIES={'Saham':'📈','Reksadana':'📊','Krypto':'🪙','Emas':'🥇','Tabungan':'🏦','Deposito':'💰','Arisan':'👥'};
 
 var currentMonthKey=(function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')})();
@@ -1042,6 +1123,8 @@ function editCategory(index){
   if(!newName){showToast('Nama tidak boleh kosong','error');return;}
   window.DATA.customCategories[index].name=newName;
   window.DATA.customCategories[index].emoji=newEmoji;
+  window.DATA.budgetCategoryMap=window.DATA.budgetCategoryMap||{};
+  if(window.DATA.budgetCategoryMap[cat.name]){window.DATA.budgetCategoryMap[newName]=window.DATA.budgetCategoryMap[cat.name];delete window.DATA.budgetCategoryMap[cat.name];}
   TXN_CATEGORIES[newName]=newEmoji;
   delete TXN_CATEGORIES[cat.name];
   saveDataToCloud();
@@ -1055,6 +1138,7 @@ function deleteCategory(index){
   if(!cat)return;
   if(!confirm('Hapus kategori "'+cat.name+'"?'))return;
   window.DATA.customCategories.splice(index,1);
+  if(window.DATA.budgetCategoryMap)delete window.DATA.budgetCategoryMap[cat.name];
   delete TXN_CATEGORIES[cat.name];
   saveDataToCloud();
   openManageCategories();
@@ -1268,13 +1352,14 @@ function renderBudget(){
   var t=calcTotals();
   var totalIncome=t.incTotal||1;
   var txns=getMonthTxns();
-  var needSpent=txns.filter(function(x){return NEED_CATS.indexOf(x.category)>=0}).reduce(function(s,x){return s+Number(x.amount||0)},0);
-  var wantSpent=txns.filter(function(x){return WANT_CATS.indexOf(x.category)>=0}).reduce(function(s,x){return s+Number(x.amount||0)},0);
-  var saveSpent=txns.filter(function(x){return SAVE_CATS.indexOf(x.category)>=0||x.type==='debt'||x.type==='sav'}).reduce(function(s,x){return s+Number(x.amount||0)},0);
+  var budgetSpent=calcBudgetSpent(txns);
+  var needSpent=budgetSpent.need;
+  var wantSpent=budgetSpent.want;
+  var saveSpent=budgetSpent.save;
   var cats=[
     {label:'Kebutuhan',pct:50,budget:totalIncome*0.5,spent:needSpent,color:'green'},
     {label:'Keinginan',pct:30,budget:totalIncome*0.3,spent:wantSpent,color:'blue'},
-    {label:'Tabungan/Hutang',pct:20,budget:totalIncome*0.2,spent:saveSpent,color:'purple'}
+    {label:'Tabungan',pct:20,budget:totalIncome*0.2,spent:saveSpent,color:'purple'}
   ];
   var html='';
   cats.forEach(function(c){
@@ -1580,7 +1665,7 @@ function importData(event){
       var workbook=XLSX.read(e.target.result,{type:'array'});
       if(workbook.SheetNames.indexOf('Transaksi')<0){showToast('Sheet Transaksi tidak ditemukan','error');return;}
       if(!confirm('Ganti semua data aplikasi dengan isi file Excel ini?'))return;
-      var newData={income:[],debts:[],transactions:{},investments:[],customCategories:window.DATA.customCategories||[],customInvestCategories:window.DATA.customInvestCategories||[]};
+      var newData={income:[],debts:[],transactions:{},investments:[],customCategories:window.DATA.customCategories||[],customInvestCategories:window.DATA.customInvestCategories||[],budgetCategoryMap:window.DATA.budgetCategoryMap||{}};
       var transactionRows=XLSX.utils.sheet_to_json(workbook.Sheets.Transaksi,{defval:''});
       transactionRows.forEach(function(row){
         var date=String(row['Tanggal']||'').substring(0,10);
@@ -1940,9 +2025,10 @@ window.showAuth=function(){
     var t=calcTotals();
     var totalIncome=t.incTotal||1;
     var txns=getMonthTxns();
-    var needSpent=txns.filter(function(x){return NEED_CATS.indexOf(x.category)>=0}).reduce(function(s,x){return s+Number(x.amount||0)},0);
-    var wantSpent=txns.filter(function(x){return WANT_CATS.indexOf(x.category)>=0}).reduce(function(s,x){return s+Number(x.amount||0)},0);
-    var saveSpent=txns.filter(function(x){return SAVE_CATS.indexOf(x.category)>=0||x.type==='debt'||x.type==='sav'}).reduce(function(s,x){return s+Number(x.amount||0)},0);
+    var budgetSpent=calcBudgetSpent(txns);
+  var needSpent=budgetSpent.need;
+    var wantSpent=budgetSpent.want;
+    var saveSpent=budgetSpent.save;
     var cats=[
       {label:'Kebutuhan',pct:50,budget:totalIncome*0.5,spent:needSpent,color:'#16a34a'},
       {label:'Keinginan',pct:30,budget:totalIncome*0.3,spent:wantSpent,color:'#3b82f6'},
@@ -2077,7 +2163,7 @@ var app=initializeApp(firebaseConfig);
 var auth=getAuth(app);
 var db=getFirestore(app);
 
-var DEF={income:[],debts:[],transactions:{},investments:[],customCategories:[],customInvestCategories:[]};
+var DEF={income:[],debts:[],transactions:{},investments:[],customCategories:[],customInvestCategories:[],budgetCategoryMap:{}};
 window.DEF=DEF;
 window.DATA=JSON.parse(JSON.stringify(DEF));
 
