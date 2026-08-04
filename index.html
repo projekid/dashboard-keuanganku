@@ -1867,7 +1867,7 @@ html,body{max-width:100%;overflow-x:hidden}body{background:#fbfcff;letter-spacin
     </span>
     <span class="profile-exit"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5"/><path d="M13 8l4 4-4 4"/><path d="M8 12h9"/></svg></span>
   </button>
-  <div class="version">Keuanganku v4.7.0.1</div>
+  <div class="version">Keuanganku v4.7.2.1</div>
 </div></aside><main class="main"><header class="topbar"><div><h1 id="pageTitle">Halo 👋</h1><p id="pageSub">Ringkasan keuanganmu hari ini.</p></div><div class="top-actions"><div class="month"><button onclick="moveMonth(-1)">‹</button><span id="monthLabel"></span><button onclick="moveMonth(1)">›</button></div><button class="btn btn-primary" onclick="openTransaction()">＋ Catat Aktivitas</button></div></header>
 <section id="page-overview" class="page active">
   <div class="overview-head">
@@ -2062,7 +2062,11 @@ html,body{max-width:100%;overflow-x:hidden}body{background:#fbfcff;letter-spacin
     </div>
   </div>
 </section>
-<section id="page-settings" class="page"><div class="settings-grid"><div class="card"><div class="card-head"><h3>Budget Rules</h3><button class="btn btn-primary" onclick="openCategory()">＋ Kategori</button></div><p class="tiny">Kategori hanya untuk pengeluaran. Goal dan investasi bukan kategori pengeluaran.</p><div id="categoryList" class="row-list"></div></div><div class="card"><div class="card-head"><h3>Alokasi Ideal</h3></div><div class="field"><label>Kebutuhan (%)</label><input id="needPct" type="number" min="0" max="100"></div><div class="field"><label>Keinginan (%)</label><input id="wantPct" type="number" min="0" max="100"></div><div class="field"><label>Saving & investing (%)</label><input id="savePct" type="number" min="0" max="100"></div><button class="btn btn-primary btn-block" onclick="saveAllocation()">Simpan Alokasi</button><p class="tiny">Total harus 100%.</p></div></div><div class="card data-tools"><div class="card-head"><h3>Data & Backup</h3></div><p class="tiny">Unduh backup atau isi aplikasi dengan data contoh untuk melihat seluruh tampilan.</p><div class="actions"><button class="btn btn-outline" onclick="downloadBackup()">Download Backup JSON</button><button class="btn btn-soft" onclick="loadDemoData()">Gunakan Data Demo</button></div></div></section>
+<section id="page-settings" class="page"><div class="settings-grid"><div class="card"><div class="card-head"><h3>Budget Rules</h3><button class="btn btn-primary" onclick="openCategory()">＋ Kategori</button></div><p class="tiny">Kategori hanya untuk pengeluaran. Goal dan investasi bukan kategori pengeluaran.</p><div id="categoryList" class="row-list"></div></div><div class="card"><div class="card-head"><h3>Alokasi Ideal</h3></div><div class="field"><label>Kebutuhan (%)</label><input id="needPct" type="number" min="0" max="100"></div><div class="field"><label>Keinginan (%)</label><input id="wantPct" type="number" min="0" max="100"></div><div class="field"><label>Saving & investing (%)</label><input id="savePct" type="number" min="0" max="100"></div><button class="btn btn-primary btn-block" onclick="saveAllocation()">Simpan Alokasi</button><p class="tiny">Total harus 100%.</p></div></div><div class="card data-tools"><div class="card-head"><h3>Data & Backup</h3></div><p class="tiny">Unduh backup atau isi aplikasi dengan data contoh untuk melihat seluruh tampilan.</p><div class="actions">
+  <button class="btn btn-outline" onclick="downloadBackup()">Download Backup JSON</button>
+  <button class="btn btn-soft" onclick="loadDemoData()">Gunakan Data Demo</button>
+  <button class="btn btn-danger" onclick="resetAllFinancialData()">Mulai dari Nol</button>
+</div></div></section>
 </main></div>
 <div id="transactionModal" class="modal"><div class="modal-box"><div class="modal-head"><h2 id="txnModalTitle">Catat Aktivitas</h2><button class="iconbtn" onclick="closeModal('transactionModal')">✕</button></div><div class="modal-body"><div class="type-grid" id="typeGrid"><button type="button" class="type-option active" data-type="expense" onclick="setTxnType('expense')">💸 Pengeluaran</button><button type="button" class="type-option" data-type="income" onclick="setTxnType('income')">💰 Pemasukan</button><button type="button" class="type-option" data-type="transfer" onclick="setTxnType('transfer')">🔄 Transfer rekening</button><button type="button" class="type-option" data-type="goal" onclick="setTxnType('goal')">🎯 Ke saving goal</button><button type="button" class="type-option" data-type="investment" onclick="setTxnType('investment')">📈 Ke investasi</button><button type="button" class="type-option" data-type="debt" onclick="setTxnType('debt')">💳 Hutang / Piutang</button></div><div class="field"><label>Nominal</label><input id="txnAmount" type="number" min="0"></div><div class="field"><label>Tanggal</label><input id="txnDate" type="date"></div><div class="field"><label>Keterangan</label><input id="txnNote"></div><div class="field" id="sourceWrap"><label id="txnSourceLabel">Account sumber</label><select id="txnSource"></select></div><div class="field hidden" id="destAccountWrap"><label>Account tujuan</label><select id="txnDestAccount"></select></div><div class="field" id="categoryWrap"><label>Kategori</label><select id="txnCategory"></select></div><div class="field hidden" id="goalWrap"><label>Saving goal tujuan</label><select id="txnGoal"></select></div><div id="investmentWrap" class="hidden">
 <div class="field"><label>Aktivitas investasi</label><select id="txnInvestmentAction" onchange="onInvestmentActionChange()"><option value="contribution">Tambah modal</option><option value="return">Update return / perubahan nilai</option><option value="withdraw">Jual / tarik dana</option></select></div>
@@ -2112,7 +2116,32 @@ const DEFAULT={schemaVersion:3,accounts:[
 {id:'debt1',direction:'liability',name:'Cicilan Motor',amount:6000000,paid:2500000,date:'2026-06-01',dueDate:'2026-09-10',accountId:'bca'},
 {id:'debt2',direction:'liability',name:'Kartu Kredit',amount:2200000,paid:700000,date:'2026-07-15',dueDate:'2026-08-20',accountId:'bca'},
 {id:'debt3',direction:'receivable',name:'Pinjaman ke Rani',amount:1500000,paid:500000,date:'2026-07-05',dueDate:'2026-08-25',accountId:'mandiri'}
-],allocation:{need:50,want:30,save:20}};window.DATA=structuredClone(DEFAULT);
+],allocation:{need:50,want:30,save:20}};
+const EMPTY_DATA={
+  schemaVersion:3,
+  accounts:[],
+  categories:structuredClone(DEFAULT.categories),
+  transactions:[],
+  goals:[],
+  investments:[],
+  debts:[],
+  allocation:{...DEFAULT.allocation}
+};
+
+window.createEmptyFinancialData=function(){
+  return {
+    schemaVersion:3,
+    accounts:[],
+    categories:structuredClone(DEFAULT.categories),
+    transactions:[],
+    goals:[],
+    investments:[],
+    debts:[],
+    allocation:{...DEFAULT.allocation}
+  };
+};
+
+window.DATA=window.createEmptyFinancialData();
 
 
 function getCurrentUserForGreeting(){
@@ -2214,15 +2243,90 @@ function moveMonth(delta){
 
 function goMobile(page,btn){go(page);document.querySelectorAll('#bottomNav button[data-page]').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active')}
 function monthKey(d){return String(d||'').slice(0,7)}function selectedKey(){return currentMonth.toISOString().slice(0,7)}function selectedTxns(){return DATA.transactions.filter(t=>monthKey(t.date)===selectedKey())}function allUntilSelected(){let end=selectedKey()+'-31';return DATA.transactions.filter(t=>(t.date||'')<=end)}
-function accountBalance(id){let a=DATA.accounts.find(x=>x.id===id),b=Number(a?.openingBalance||0);allUntilSelected().forEach(t=>{let n=Number(t.amount||0);if(t.type==='income'&&t.toAccount===id)b+=n;if(t.type==='expense'&&t.fromAccount===id)b-=n;if(['transfer','goal'].includes(t.type)&&t.fromAccount===id)b-=n;if(t.type==='transfer'&&t.toAccount===id)b+=n;if(t.type==='investment'&&t.investmentAction==='contribution'&&t.fromAccount===id)b-=Math.abs(n);if(t.type==='investment'&&t.investmentAction==='withdraw'&&t.toAccount===id)b+=Math.abs(n);if(t.type==='debt'&&t.accountId===id)b+=t.debtDirection==='liability'?n:-n;if(t.type==='debt_payment'&&t.accountId===id)b+=t.debtDirection==='receivable'?n:-n});return b}
+function accountBalance(id){
+  let account=DATA.accounts.find(item=>item.id===id);
+  let selectedEnd=selectedKey()+'-31';
+  let includeOpening=!account?.openingDate||account.openingDate<=selectedEnd;
+  let b=includeOpening?Number(account?.openingBalance||0):0;
+  allUntilSelected().forEach(t=>{let n=Number(t.amount||0);if(t.type==='income'&&t.toAccount===id)b+=n;if(t.type==='expense'&&t.fromAccount===id)b-=n;if(['transfer','goal'].includes(t.type)&&t.fromAccount===id)b-=n;if(t.type==='transfer'&&t.toAccount===id)b+=n;if(t.type==='investment'&&t.investmentAction==='contribution'&&t.fromAccount===id)b-=Math.abs(n);if(t.type==='investment'&&t.investmentAction==='withdraw'&&t.toAccount===id)b+=Math.abs(n);if(t.type==='debt'&&t.accountId===id)b+=t.debtDirection==='liability'?n:-n;if(t.type==='debt_payment'&&t.accountId===id)b+=t.debtDirection==='receivable'?n:-n
+  });
+  return b;
+}
 function goalBalance(id){let g=DATA.goals.find(x=>x.id===id),b=Number(g?.openingAmount||0);allUntilSelected().forEach(t=>{if(t.type==='goal'&&t.goalId===id)b+=Number(t.amount||0)});return b}
 function investmentContrib(id){let i=DATA.investments.find(x=>x.id===id),b=Number(i?.openingValue||0);allUntilSelected().forEach(t=>{if(t.type==='investment'&&t.investmentId===id&&(!t.investmentAction||t.investmentAction==='contribution'))b+=Math.abs(Number(t.amount||0));if(t.type==='investment'&&t.investmentId===id&&t.investmentAction==='withdraw')b-=Math.abs(Number(t.amount||0))});return Math.max(b,0)}
 function investmentReturn(id){return allUntilSelected().filter(t=>t.type==='investment'&&t.investmentId===id&&t.investmentAction==='return').reduce((s,t)=>s+Number(t.amount||0),0)}
 function investmentValue(i){return Math.max(investmentContrib(i.id)+investmentReturn(i.id),0)}
-function migrate(raw){return raw?.schemaVersion===3?normalize(raw):structuredClone(DEFAULT)}
-function normalize(d){d={...structuredClone(DEFAULT),...d};['accounts','categories','transactions','goals','investments','debts'].forEach(k=>d[k]=Array.isArray(d[k])?d[k]:[]);d.debts=d.debts.map(x=>({direction:'liability',date:'',dueDate:'',accountId:d.accounts[0]?.id||'',...x,amount:Number(x.amount||0),paid:Number(x.paid||0)}));d.allocation={...DEFAULT.allocation,...(d.allocation||{})};return d}
-function save(){let u=window.firebaseGetCurrentUser?.();if(u)window.firebaseSaveData(u.uid,DATA);localStorage.setItem('keuanganku_v3',JSON.stringify(DATA))}function toast(s){let e=document.getElementById('toast');e.textContent=s;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200)}
-function init(){DATA=migrate(DATA);save();document.getElementById('auth').classList.add('hidden');document.getElementById('app').classList.remove('hidden');let em=window.firebaseGetCurrentUser?.()?.email||'filia.setiawan@gmail.com';let rawName=(em.split('@')[0]||'Filia').split(/[._-]/)[0];let displayName=rawName.replace(/^./,c=>c.toUpperCase());let emailEl=document.getElementById('userEmail');if(emailEl)emailEl.textContent=em;let nameEl=document.getElementById('userName');if(nameEl)nameEl.textContent=displayName;let initialEl=document.getElementById('userInitial');if(initialEl)initialEl.textContent=(displayName.charAt(0)||'F').toUpperCase();let wn=document.getElementById('welcomeName');if(wn)wn.textContent=displayName;currentMonth=new Date();renderAll()}
+function migrate(raw){
+  return raw&&typeof raw==='object'
+    ?normalize(raw)
+    :window.createEmptyFinancialData();
+}
+function normalize(d){
+  d={...window.createEmptyFinancialData(),...(d||{})};
+
+  ['accounts','transactions','goals','investments','debts'].forEach(key=>{
+    d[key]=Array.isArray(d[key])?d[key]:[];
+  });
+
+  d.categories=Array.isArray(d.categories)&&d.categories.length
+    ?d.categories
+    :structuredClone(DEFAULT.categories);
+
+  d.accounts=d.accounts.map(account=>({
+    openingBalance:0,
+    openingDate:'',
+    ...account,
+    openingBalance:Number(account.openingBalance||0)
+  }));
+
+  d.goals=d.goals.map(goal=>({
+    openingAmount:0,
+    ...goal,
+    openingAmount:Number(goal.openingAmount||0)
+  }));
+
+  d.investments=d.investments.map(investment=>({
+    openingValue:0,
+    currentValue:null,
+    ...investment,
+    openingValue:Number(investment.openingValue||0)
+  }));
+
+  d.debts=d.debts.map(debt=>({
+    direction:'liability',
+    date:'',
+    dueDate:'',
+    accountId:d.accounts[0]?.id||'',
+    ...debt,
+    amount:Number(debt.amount||0),
+    paid:Number(debt.paid||0)
+  }));
+
+  d.allocation={...EMPTY_DATA.allocation,...(d.allocation||{})};
+  d.schemaVersion=3;
+  return d;
+}
+function getUserStorageKey(uid){
+  return uid?'keuanganku_v3_'+uid:'keuanganku_v3_local';
+}
+
+function save(){
+  let user=window.firebaseGetCurrentUser?.();
+  let key=getUserStorageKey(user?.uid);
+  let snapshot=normalize(structuredClone(DATA));
+
+  DATA=snapshot;
+  localStorage.setItem(key,JSON.stringify(snapshot));
+
+  if(user){
+    return window.firebaseSaveData(user.uid,snapshot);
+  }
+
+  return Promise.resolve();
+}
+
+function toast(s){let e=document.getElementById('toast');e.textContent=s;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200)}
+function init(){DATA=migrate(DATA);save();document.getElementById('auth').classList.add('hidden');document.getElementById('app').classList.remove('hidden');let em=window.firebaseGetCurrentUser?.()?.email||'';let rawName=(em.split('@')[0]||'Pengguna').split(/[._-]/)[0];let displayName=rawName.replace(/^./,c=>c.toUpperCase());let emailEl=document.getElementById('userEmail');if(emailEl)emailEl.textContent=em;let nameEl=document.getElementById('userName');if(nameEl)nameEl.textContent=displayName;let initialEl=document.getElementById('userInitial');if(initialEl)initialEl.textContent=(displayName.charAt(0)||'F').toUpperCase();let wn=document.getElementById('welcomeName');if(wn)wn.textContent=displayName;currentMonth=new Date();renderAll()}
 function renderAll(){
   document.getElementById('monthLabel').textContent=currentMonth.toLocaleDateString('id-ID',{month:'long',year:'numeric'});
   renderOverview();
@@ -2235,7 +2339,66 @@ function renderAll(){
   fillSelects();
   updateDynamicGreeting();
 }
-function totals(){let m=selectedTxns(),income=m.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0),expense=m.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0),saved=m.filter(t=>t.type==='goal'||(t.type==='investment'&&(!t.investmentAction||t.investmentAction==='contribution'))).reduce((s,t)=>s+Math.abs(t.amount),0),cash=DATA.accounts.reduce((s,a)=>s+accountBalance(a.id),0),goals=DATA.goals.reduce((s,g)=>s+goalBalance(g.id),0),inv=DATA.investments.reduce((s,i)=>s+investmentValue(i),0),liabilities=DATA.debts.filter(d=>d.direction!=='receivable').reduce((s,d)=>s+Math.max(Number(d.amount||0)-Number(d.paid||0),0),0),receivables=DATA.debts.filter(d=>d.direction==='receivable').reduce((s,d)=>s+Math.max(Number(d.amount||0)-Number(d.paid||0),0),0);return{income,expense,saved,cash,goals,inv,debt:liabilities,liabilities,receivables,net:cash+goals+inv+receivables-liabilities}}
+function totals(){
+  let monthTransactions=selectedTxns();
+
+  let income=monthTransactions
+    .filter(transaction=>transaction.type==='income')
+    .reduce((sum,transaction)=>sum+Number(transaction.amount||0),0);
+
+  let expense=monthTransactions
+    .filter(transaction=>transaction.type==='expense')
+    .reduce((sum,transaction)=>sum+Number(transaction.amount||0),0);
+
+  let saved=monthTransactions
+    .filter(transaction=>
+      transaction.type==='goal'||
+      (transaction.type==='investment'&&(!transaction.investmentAction||transaction.investmentAction==='contribution'))
+    )
+    .reduce((sum,transaction)=>sum+Math.abs(Number(transaction.amount||0)),0);
+
+  let cash=(DATA.accounts||[])
+    .reduce((sum,account)=>sum+Number(accountBalance(account.id)||0),0);
+
+  let goals=(DATA.goals||[])
+    .reduce((sum,goal)=>sum+Number(goalBalance(goal.id)||0),0);
+
+  let inv=(DATA.investments||[])
+    .reduce((sum,investment)=>sum+Number(investmentValue(investment)||0),0);
+
+  let liabilities=(DATA.debts||[])
+    .filter(debt=>debt.direction!=='receivable')
+    .reduce((sum,debt)=>sum+Math.max(Number(debt.amount||0)-Number(debt.paid||0),0),0);
+
+  let receivables=(DATA.debts||[])
+    .filter(debt=>debt.direction==='receivable')
+    .reduce((sum,debt)=>sum+Math.max(Number(debt.amount||0)-Number(debt.paid||0),0),0);
+
+  income=Number.isFinite(income)?income:0;
+  expense=Number.isFinite(expense)?expense:0;
+  saved=Number.isFinite(saved)?saved:0;
+  cash=Number.isFinite(cash)?cash:0;
+  goals=Number.isFinite(goals)?goals:0;
+  inv=Number.isFinite(inv)?inv:0;
+  liabilities=Number.isFinite(liabilities)?liabilities:0;
+  receivables=Number.isFinite(receivables)?receivables:0;
+
+  let net=cash+goals+inv+receivables-liabilities;
+  net=Number.isFinite(net)?net:0;
+
+  return{
+    income,
+    expense,
+    saved,
+    cash,
+    goals,
+    inv,
+    debt:liabilities,
+    liabilities,
+    receivables,
+    net
+  };
+}
 function health(){
   let t=totals(),monthTxns=selectedTxns(),allTxns=DATA.transactions||[];
   let expenseTxns=monthTxns.filter(x=>x.type==='expense');
@@ -2628,7 +2791,42 @@ function updateAccountScrollControls(){
 function budgetBarDetailed(name,val,target,type,income){let spent=income*(val/100),limit=income*(target/100),status=val>target?'over':'';return `<div class="budget-detail ${status}"><div class="budget-symbol ${type}">${type==='need'?'⌂':type==='want'?'◎':'↗'}</div><div class="budget-content"><div class="budget-title"><span>${name} (${target}%)</span><b>${Math.round(val)}%</b></div><div class="progress"><span style="width:${Math.min(val/Math.max(target,1)*100,100)}%"></span></div><div class="budget-amount-text">${fmt(spent)} / ${fmt(limit)}</div></div></div>`}
 function cashMoveRow(label,val,type){return `<div class="cash-move-row"><span><i class="dot ${type}"></i>${label}</span><b class="${val>=0?'positive':'negative'}">${val>=0?'+ ':''}${fmt(val)}</b></div>`}
 function goalRowDetailed(g){let cur=goalBalance(g.id),pct=g.target?Math.min(cur/g.target*100,100):0,remaining=Math.max(g.target-cur,0);return `<div class="goal-overview-row"><div class="goal-overview-icon">${g.emoji||'🎯'}</div><div class="goal-overview-main"><div class="goal-overview-title"><span>${g.name}</span><b>${Math.round(pct)}%</b></div><div class="progress"><span style="width:${pct}%"></span></div><div class="goal-overview-meta"><span>${fmt(cur)} / ${fmt(g.target)}</span><em>${fmt(remaining)} lagi</em></div></div></div>`}
-function loadDemoData(){if(!confirm('Ganti data saat ini dengan data demo?'))return;DATA=structuredClone(DEFAULT);save();renderAll();toast('Data demo berhasil dimuat')}
+function loadDemoData(){
+  if(!confirm('Ganti data saat ini dengan data demo? Data aktif akan digantikan.'))return;
+  DATA=structuredClone(DEFAULT);
+  save();
+  renderAll();
+  toast('Data demo berhasil dimuat');
+}
+
+async function resetAllFinancialData(){
+  let message=
+    'Mulai dari nol?\n\n'+
+    'Semua transaksi, rekening, saldo awal, goals, investasi, hutang, dan piutang akan dihapus permanen dari akun ini.';
+
+  if(!confirm(message))return;
+
+  DATA=window.createEmptyFinancialData();
+  currentMonth=new Date();
+
+  if(cashChart){
+    cashChart.destroy();
+    cashChart=null;
+  }
+  if(expenseCategoryChart){
+    expenseCategoryChart.destroy();
+    expenseCategoryChart=null;
+  }
+
+  try{
+    await save();
+    renderAll();
+    toast('Semua data sudah kembali ke Rp0');
+  }catch(error){
+    console.error('Reset data gagal:',error);
+    toast('Reset belum tersimpan ke cloud. Coba lagi.');
+  }
+}
 function budgetBar(name,val,target,color){return `<div class="budget-row"><div class="budget-line"><span>${name}</span><b>${Math.round(val)}% / ${target}%</b></div><div class="progress"><span style="width:${Math.min(val/Math.max(target,1)*100,100)}%;background:${color}"></span></div></div>`}
 function renderChart(t){
   let months=[];
@@ -3117,7 +3315,22 @@ function openSimple(title,body,fn){
   };
   openModal('simpleModal');
 }
-function openAccount(id){let a=DATA.accounts.find(x=>x.id===id);openSimple(a?'Edit Account':'Tambah Account',`<div class="field"><label>Nama</label><input id="sName" value="${a?.name||''}"></div><div class="field"><label>Emoji</label><input id="sEmoji" value="${a?.emoji||'🏦'}"></div><div class="field"><label>Saldo awal</label><input id="sAmount" type="number" value="${a?.openingBalance||0}"></div>`,()=>{let n=sName.value.trim();if(!n)return toast('Nama wajib diisi');if(a)Object.assign(a,{name:n,emoji:sEmoji.value,openingBalance:Number(sAmount.value)||0});else DATA.accounts.push({id:uid(),name:n,emoji:sEmoji.value||'🏦',openingBalance:Number(sAmount.value)||0});save();closeModal('simpleModal');renderAll()})}
+function openAccount(id){let a=DATA.accounts.find(x=>x.id===id);openSimple(a?'Edit Account':'Tambah Account',`<div class="field"><label>Nama</label><input id="sName" value="${a?.name||''}"></div><div class="field"><label>Emoji</label><input id="sEmoji" value="${a?.emoji||'🏦'}"></div><div class="field"><label>Saldo awal</label><input id="sAmount" type="number" value="${a?.openingBalance||0}"></div>`,()=>{let n=sName.value.trim();if(!n)return toast('Nama wajib diisi');if(a){
+  Object.assign(a,{
+    name:n,
+    emoji:sEmoji.value,
+    openingBalance:Number(sAmount.value)||0,
+    openingDate:a.openingDate||new Date().toISOString().slice(0,10)
+  });
+}else{
+  DATA.accounts.push({
+    id:uid(),
+    name:n,
+    emoji:sEmoji.value||'🏦',
+    openingBalance:Number(sAmount.value)||0,
+    openingDate:new Date().toISOString().slice(0,10)
+  });
+}save();closeModal('simpleModal');renderAll()})}
 function openGoal(id){let g=DATA.goals.find(x=>x.id===id);openSimple(g?'Edit Goal':'Buat Saving Goal',`<div class="field"><label>Nama goal</label><input id="sName" value="${g?.name||''}"></div><div class="field"><label>Emoji</label><input id="sEmoji" value="${g?.emoji||'🎯'}"></div><div class="field"><label>Target</label><input id="sAmount" type="number" value="${g?.target||0}"></div><div class="field"><label>Deadline</label><input id="sDate" type="date" value="${g?.deadline||''}"></div><div class="field"><label>Saldo awal goal</label><input id="sOpening" type="number" value="${g?.openingAmount||0}"></div>`,()=>{if(!sName.value.trim())return toast('Nama wajib diisi');let v={name:sName.value.trim(),emoji:sEmoji.value||'🎯',target:Number(sAmount.value)||0,deadline:sDate.value,openingAmount:Number(sOpening.value)||0};if(g)Object.assign(g,v);else DATA.goals.push({id:uid(),...v});save();closeModal('simpleModal');renderAll()})}
 function openInvestment(id){
   var investment=DATA.investments.find(function(item){return item.id===id});
@@ -3222,7 +3435,35 @@ async function authSubmit(){authError.textContent='';try{if(authRegister)await f
 </script>
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';import{getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';import{getFirestore,doc,getDoc,setDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-var firebaseConfig={apiKey:"AIzaSyBm4gB-xGqr11-MaNP7Nw-RBE6Fo9QxK-U",authDomain:"dashboard-keuanganku.firebaseapp.com",projectId:"dashboard-keuanganku",storageBucket:"dashboard-keuanganku.firebasestorage.app",messagingSenderId:"997868060699",appId:"1:997868060699:web:1624cca0f331ff7015b8be"};var app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);window.firebaseLogin=(e,p)=>signInWithEmailAndPassword(auth,e,p);window.firebaseRegister=async(e,p)=>{let c=await createUserWithEmailAndPassword(auth,e,p);await setDoc(doc(db,'users',c.user.uid),structuredClone(DEFAULT))};window.firebaseReset=e=>sendPasswordResetEmail(auth,e);window.firebaseLogout=()=>signOut(auth);window.firebaseGetCurrentUser=()=>auth.currentUser;window.firebaseSaveData=async(u,d)=>{try{await setDoc(doc(db,'users',u),d)}catch(e){console.warn(e)}};onAuthStateChanged(auth,async u=>{if(!u){auth.classList?.remove('hidden');document.getElementById('auth').classList.remove('hidden');document.getElementById('app').classList.add('hidden');return}try{let s=await getDoc(doc(db,'users',u.uid));window.DATA=s.exists()?s.data():structuredClone(DEFAULT)}catch(e){let l=localStorage.getItem('keuanganku_v3')||localStorage.getItem('keuanganku_data');window.DATA=l?JSON.parse(l):structuredClone(DEFAULT)}init()});
+var firebaseConfig={apiKey:"AIzaSyBm4gB-xGqr11-MaNP7Nw-RBE6Fo9QxK-U",authDomain:"dashboard-keuanganku.firebaseapp.com",projectId:"dashboard-keuanganku",storageBucket:"dashboard-keuanganku.firebasestorage.app",messagingSenderId:"997868060699",appId:"1:997868060699:web:1624cca0f331ff7015b8be"};var app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);window.firebaseLogin=(e,p)=>signInWithEmailAndPassword(auth,e,p);window.firebaseRegister=async(e,p)=>{let c=await createUserWithEmailAndPassword(auth,e,p);await setDoc(doc(db,'users',c.user.uid),window.createEmptyFinancialData())};window.firebaseReset=e=>sendPasswordResetEmail(auth,e);window.firebaseLogout=()=>signOut(auth);window.firebaseGetCurrentUser=()=>auth.currentUser;window.firebaseSaveData=async(u,d)=>{try{await setDoc(doc(db,'users',u),d)}catch(e){console.warn(e)}};onAuthStateChanged(auth,async u=>{
+  if(!u){
+    document.getElementById('auth').classList.remove('hidden');
+    document.getElementById('app').classList.add('hidden');
+    return;
+  }
+
+  let userRef=doc(db,'users',u.uid);
+  let storageKey='keuanganku_v3_'+u.uid;
+
+  try{
+    let snapshot=await getDoc(userRef);
+
+    if(snapshot.exists()){
+      window.DATA=snapshot.data();
+    }else{
+      window.DATA=window.createEmptyFinancialData();
+      await setDoc(userRef,window.DATA);
+    }
+
+    localStorage.setItem(storageKey,JSON.stringify(window.DATA));
+  }catch(error){
+    console.warn('Firebase load failed:',error);
+    let localData=localStorage.getItem(storageKey);
+    window.DATA=localData?JSON.parse(localData):window.createEmptyFinancialData();
+  }
+
+  init();
+});
 
 document.addEventListener('DOMContentLoaded',function(){
   updateDynamicGreeting();
