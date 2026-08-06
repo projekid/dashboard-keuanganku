@@ -1784,6 +1784,14 @@ html,body{max-width:100%;overflow-x:hidden}body{background:#fbfcff;letter-spacin
   }
 }
 
+
+/* CATEGORY DELETE ACTION v4.7.4 */
+.category-delete-button{
+  width:100%;
+  margin-top:4px;
+  justify-content:center;
+}
+
 </style>
 </head><body>
 
@@ -1867,7 +1875,7 @@ html,body{max-width:100%;overflow-x:hidden}body{background:#fbfcff;letter-spacin
     </span>
     <span class="profile-exit"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5"/><path d="M13 8l4 4-4 4"/><path d="M8 12h9"/></svg></span>
   </button>
-  <div class="version">Keuanganku v4.7.2.1</div>
+  <div class="version">Keuanganku v4.7.5.1</div>
 </div></aside><main class="main"><header class="topbar"><div><h1 id="pageTitle">Halo 👋</h1><p id="pageSub">Ringkasan keuanganmu hari ini.</p></div><div class="top-actions"><div class="month"><button onclick="moveMonth(-1)">‹</button><span id="monthLabel"></span><button onclick="moveMonth(1)">›</button></div><button class="btn btn-primary" onclick="openTransaction()">＋ Catat Aktivitas</button></div></header>
 <section id="page-overview" class="page active">
   <div class="overview-head">
@@ -2100,7 +2108,7 @@ html,body{max-width:100%;overflow-x:hidden}body{background:#fbfcff;letter-spacin
 const fmt=n=>'Rp'+Math.round(Number(n||0)).toLocaleString('id-ID');const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);let currentMonth=new Date();let authRegister=false;let editingTxn=null;let cashChart=null;let expenseCategoryChart=null;
 const DEFAULT={schemaVersion:3,accounts:[
 {id:'cash',name:'Cash',emoji:'💵',openingBalance:500000},{id:'bca',name:'Bank BCA',emoji:'BCA',openingBalance:4250000},{id:'mandiri',name:'Bank Mandiri',emoji:'mandiri',openingBalance:2100000},{id:'bri',name:'Bank BRI',emoji:'BRI',openingBalance:1750000},{id:'bni',name:'Bank BNI',emoji:'BNI',openingBalance:1250000},{id:'dana',name:'DANA',emoji:'DANA',openingBalance:820000}],categories:[
-{id:'food',name:'Makan & Minum',emoji:'🍽️',group:'need'},{id:'grocery',name:'Groceries',emoji:'🛒',group:'need'},{id:'transport',name:'Transport',emoji:'🚗',group:'need'},{id:'bills',name:'Tagihan',emoji:'🧾',group:'need'},{id:'health',name:'Kesehatan',emoji:'🏥',group:'need'},{id:'shopping',name:'Belanja',emoji:'🛍️',group:'want'},{id:'fun',name:'Hiburan',emoji:'🎮',group:'want'},{id:'coffee',name:'Ngopi',emoji:'☕',group:'want'},{id:'travel',name:'Travel',emoji:'✈️',group:'want'},{id:'other',name:'Lainnya',emoji:'📦',group:'want'}],transactions:[
+{id:'food',name:'Makan & Minum',emoji:'🍽️',group:'need'},{id:'grocery',name:'Groceries',emoji:'🛒',group:'need'},{id:'transport',name:'Transport',emoji:'🚗',group:'need'},{id:'bills',name:'Tagihan',emoji:'🧾',group:'need'},{id:'health',name:'Kesehatan',emoji:'🏥',group:'need'},{id:'shopping',name:'Belanja',emoji:'🛍️',group:'want'},{id:'fun',name:'Hiburan',emoji:'🎮',group:'want'},{id:'coffee',name:'Ngopi',emoji:'☕',group:'want'},{id:'travel',name:'Travel',emoji:'✈️',group:'want'},{id:'saving',name:'Tabungan',emoji:'💰',group:'save'},{id:'other',name:'Lainnya',emoji:'📦',group:'want'}],transactions:[
 {id:'t1',type:'income',amount:10000000,date:'2026-08-08',note:'Gaji Bulanan',toAccount:'bca',categoryId:'other'},
 {id:'t2',type:'income',amount:4000000,date:'2026-08-03',note:'Freelance Project',toAccount:'mandiri',categoryId:'other'},
 {id:'t3',type:'expense',amount:450000,date:'2026-08-07',note:'Belanja Bulanan',fromAccount:'bca',categoryId:'grocery'},
@@ -2272,6 +2280,15 @@ function normalize(d){
     ?d.categories
     :structuredClone(DEFAULT.categories);
 
+  if(!d.categories.some(category=>category.id==='saving'||String(category.name||'').toLowerCase()==='tabungan')){
+    d.categories.push({
+      id:'saving',
+      name:'Tabungan',
+      emoji:'💰',
+      group:'save'
+    });
+  }
+
   d.accounts=d.accounts.map(account=>({
     openingBalance:0,
     openingDate:'',
@@ -2400,34 +2417,58 @@ function totals(){
   };
 }
 function health(){
-  let t=totals(),monthTxns=selectedTxns(),allTxns=DATA.transactions||[];
-  let expenseTxns=monthTxns.filter(x=>x.type==='expense');
-  let incomeTxns=monthTxns.filter(x=>x.type==='income');
-  let need=0,want=0;
+  let t=totals();
+  let monthTransactions=selectedTxns();
+  let allTransactions=DATA.transactions||[];
 
-  expenseTxns.forEach(x=>{
-    let c=DATA.categories.find(c=>c.id===x.categoryId);
-    if(c?.group==='need')need+=Number(x.amount||0);
-    else want+=Number(x.amount||0);
+  let expenseTransactions=monthTransactions.filter(transaction=>transaction.type==='expense');
+  let incomeTransactions=monthTransactions.filter(transaction=>transaction.type==='income');
+
+  let need=0;
+  let want=0;
+  let categorySaving=0;
+
+  expenseTransactions.forEach(transaction=>{
+    let category=DATA.categories.find(item=>item.id===transaction.categoryId);
+    let amount=Math.abs(Number(transaction.amount||0));
+
+    if(category?.group==='need'){
+      need+=amount;
+    }else if(category?.group==='save'){
+      categorySaving+=amount;
+    }else{
+      want+=amount;
+    }
   });
 
-  let inc=t.income||0;
-  let savePct=inc>0?t.saved/inc*100:0;
-  let needPct=inc>0?need/inc*100:0;
-  let wantPct=inc>0?want/inc*100:0;
+  let income=Math.max(Number(t.income||0),0);
+  let totalSaved=Math.max(Number(t.saved||0)+categorySaving,0);
+  let needPct=income>0?need/income*100:0;
+  let wantPct=income>0?want/income*100:0;
+  let savePct=income>0?totalSaved/income*100:0;
 
-  let hasOpeningBalance=(DATA.accounts||[]).some(a=>Number(a.openingBalance||0)!==0);
-  let hasTransactions=allTxns.length>0;
-  let hasGoals=(DATA.goals||[]).length>0;
-  let hasInvestments=(DATA.investments||[]).length>0;
-  let hasDebts=(DATA.debts||[]).length>0;
-  let hasAnyFinancialData=hasOpeningBalance||hasTransactions||hasGoals||hasInvestments||hasDebts;
+  let accounts=DATA.accounts||[];
+  let goals=DATA.goals||[];
+  let investments=DATA.investments||[];
+  let debts=DATA.debts||[];
+
+  let hasOpeningBalance=accounts.some(account=>Number(account.openingBalance||0)!==0);
+  let hasTransactions=allTransactions.length>0;
+  let hasGoals=goals.length>0;
+  let hasInvestments=investments.length>0;
+  let hasDebts=debts.length>0;
+  let hasAnyFinancialData=
+    hasOpeningBalance||
+    hasTransactions||
+    hasGoals||
+    hasInvestments||
+    hasDebts;
 
   let checklist=[
-    {key:'account',done:hasOpeningBalance||hasTransactions,label:'Tambahkan saldo rekening pertama'},
+    {key:'account',done:accounts.length>0,label:'Tambahkan rekening pertama'},
     {key:'transaction',done:hasTransactions,label:'Catat transaksi pertama'},
-    {key:'income',done:incomeTxns.length>0,label:'Catat pemasukan bulan ini'},
-    {key:'expense',done:expenseTxns.length>0,label:'Catat pengeluaran bulan ini'},
+    {key:'income',done:incomeTransactions.length>0,label:'Catat pemasukan bulan ini'},
+    {key:'expense',done:expenseTransactions.length>0,label:'Catat pengeluaran bulan ini'},
     {key:'goal',done:hasGoals,label:'Buat target tabungan'},
     {key:'investment',done:hasInvestments,label:'Tambahkan investasi'}
   ];
@@ -2435,108 +2476,354 @@ function health(){
   if(!hasAnyFinancialData){
     return{
       score:0,
-      badge:'🌱 Baru Memulai',
+      badge:'Tidak Sehat',
       ins:[
-        '○ Tambahkan saldo rekening pertama',
-        '○ Catat pemasukan pertama',
-        '○ Buat target tabungan'
+        {kind:'info',text:'Tambahkan saldo rekening.'},
+        {kind:'warning',text:'Belum ada data untuk dinilai.'},
+        {kind:'info',text:'Catat pemasukan pertamamu.'}
       ],
       checklist,
-      needPct:0,wantPct:0,savePct:0,
-      nextScore:20
+      needPct:0,
+      wantPct:0,
+      savePct:0,
+      nextScore:40,
+      breakdown:{
+        netWorth:0,
+        cashFlow:0,
+        emergencyFund:0,
+        budget:0,
+        saving:0,
+        investment:0,
+        debtPenalty:0
+      }
     };
   }
 
-  let score=0,ins=[];
+  let totalAssets=Math.max(
+    Number(t.cash||0)+
+    Number(t.goals||0)+
+    Number(t.inv||0)+
+    Number(t.receivables||0),
+    0
+  );
 
-  // Foundation — 20 points
-  if(hasOpeningBalance||hasTransactions){score+=5;ins.push('✓ Rekening sudah mulai digunakan')}
-  else ins.push('○ Tambahkan saldo rekening');
+  let liabilities=Math.max(Number(t.liabilities||0),0);
+  let netWorth=Number(t.net||0);
+  let debtToAssetRatio=totalAssets>0?liabilities/totalAssets:(liabilities>0?Infinity:0);
 
-  if(hasTransactions){score+=5;ins.push('✓ Transaksi pertama sudah tercatat')}
-  else ins.push('○ Catat transaksi pertama');
+  let breakdown={
+    netWorth:0,
+    cashFlow:0,
+    emergencyFund:0,
+    budget:0,
+    saving:0,
+    investment:0,
+    debtPenalty:0
+  };
 
-  if(incomeTxns.length){score+=5;ins.push('✓ Pemasukan bulan ini tercatat')}
-  else ins.push('○ Catat pemasukan bulan ini');
+  let insights=[];
 
-  if(expenseTxns.length){score+=5;ins.push('✓ Pengeluaran bulan ini tercatat')}
-  else ins.push('○ Catat pengeluaran bulan ini');
-
-  // Cash flow — 25 points
-  if(t.income>0)score+=10;
-  if(t.expense>0)score+=5;
-  let monthlyNetCash=t.income-t.expense-t.saved;
-  if(t.income>0&&monthlyNetCash>=0){
-    score+=10;
-    ins.push('✓ Arus kas bulan ini positif');
-  }else if(t.income>0){
-    ins.push('! Arus kas bulan ini negatif');
+  // 1. Net worth — maximum 30 points.
+  if(liabilities===0&&totalAssets>0){
+    breakdown.netWorth=30;
+  }else if(netWorth>=0&&totalAssets>0){
+    let netWorthRatio=netWorth/totalAssets;
+    breakdown.netWorth=
+      netWorthRatio>=0.5?30:
+      netWorthRatio>=0.2?25:
+      20;
+  }else if(netWorth<0&&liabilities>0){
+    let assetCoverage=totalAssets/liabilities;
+    breakdown.netWorth=
+      assetCoverage>=0.75?12:
+      assetCoverage>=0.5?8:
+      assetCoverage>=0.25?4:
+      0;
   }
 
-  // Planning — 25 points
-  if(hasGoals){score+=10;ins.push('✓ Target tabungan sudah dibuat')}
-  else ins.push('○ Buat target tabungan');
-
-  if(hasInvestments){score+=10;ins.push('✓ Investasi sudah mulai dicatat')}
-  else ins.push('○ Tambahkan investasi');
-
-  if(t.saved>0){
-    score+=5;
-    ins.push('✓ Dana sudah dialokasikan ke goals atau investasi');
+  if(netWorth<0){
+    insights.push({
+      kind:'warning',
+      priority:100,
+      text:'Net worth negatif: hutang lebih besar dari aset.'
+    });
+  }else if(netWorth>0){
+    insights.push({
+      kind:'good',
+      priority:70,
+      text:'Total asetmu lebih besar dari hutang.'
+    });
   }
 
-  // Debt health — 20 points
-  let activeLiabilities=(DATA.debts||[]).filter(d=>d.direction!=='receivable'&&debtRemaining(d)>0);
-  let overdueDebts=(DATA.debts||[]).filter(debtIsOverdue);
-  let totalAssets=Math.max(t.cash+t.goals+t.inv+t.receivables,0);
-  let debtRatio=totalAssets>0?t.liabilities/totalAssets:0;
+  // 2. Monthly cash flow — maximum 25 points.
+  let monthlyNetCash=income-Number(t.expense||0)-totalSaved;
 
-  if(overdueDebts.length===0){
-    score+=10;
-    ins.push('✓ Tidak ada hutang terlambat');
+  if(income>0){
+    let netCashRatio=monthlyNetCash/income;
+
+    breakdown.cashFlow=
+      netCashRatio>=0.2?25:
+      netCashRatio>=0?20:
+      netCashRatio>=-0.1?10:
+      0;
+
+    if(monthlyNetCash>=0){
+      insights.push({
+        kind:'good',
+        priority:75,
+        text:'Pemasukan bulan ini masih menutup pengeluaran.'
+      });
+    }else{
+      insights.push({
+        kind:'warning',
+        priority:90,
+        text:'Pengeluaran bulan ini melebihi pemasukan.'
+      });
+    }
   }else{
-    ins.push('! Ada hutang melewati jatuh tempo');
+    insights.push({
+      kind:'warning',
+      priority:80,
+      text:'Belum ada pemasukan pada bulan ini.'
+    });
   }
 
-  if(activeLiabilities.length===0||debtRatio<0.3){
-    score+=10;
-    ins.push('✓ Rasio hutang masih sehat');
+  // 3. Emergency fund / available cash — maximum 15 points.
+  let monthlyLivingCost=need>0?need:Number(t.expense||0);
+  let emergencyMonths=monthlyLivingCost>0?Math.max(Number(t.cash||0),0)/monthlyLivingCost:0;
+
+  breakdown.emergencyFund=
+    emergencyMonths>=6?15:
+    emergencyMonths>=3?12:
+    emergencyMonths>=1?7:
+    Number(t.cash||0)>0?3:
+    0;
+
+  if(monthlyLivingCost>0&&emergencyMonths<1){
+    insights.push({
+      kind:'warning',
+      priority:78,
+      text:'Kas tersedia belum cukup untuk satu bulan.'
+    });
+  }else if(emergencyMonths>=3){
+    insights.push({
+      kind:'good',
+      priority:55,
+      text:'Dana kasmu cukup untuk beberapa bulan.'
+    });
+  }
+
+  // 4. Budget discipline — maximum 10 points.
+  let needTarget=Number(DATA.allocation?.need||50);
+  let wantTarget=Number(DATA.allocation?.want||30);
+  let needExcess=Math.max(needPct-needTarget,0);
+  let wantExcess=Math.max(wantPct-wantTarget,0);
+  let totalBudgetExcess=needExcess+wantExcess;
+
+  if(income>0){
+    breakdown.budget=
+      totalBudgetExcess===0?10:
+      totalBudgetExcess<=10?7:
+      totalBudgetExcess<=20?3:
+      0;
+
+    if(wantExcess>0){
+      insights.push({
+        kind:'warning',
+        priority:65,
+        text:'Porsi pengeluaran keinginan melewati budget.'
+      });
+    }else if(needExcess>0){
+      insights.push({
+        kind:'warning',
+        priority:62,
+        text:'Porsi kebutuhan melewati budget.'
+      });
+    }
+  }
+
+  // 5. Saving habit — maximum 10 points.
+  let saveTarget=Number(DATA.allocation?.save||20);
+
+  breakdown.saving=
+    savePct>=saveTarget&&income>0?10:
+    savePct>0?5:
+    0;
+
+  if(savePct>=saveTarget&&income>0){
+    insights.push({
+      kind:'good',
+      priority:60,
+      text:'Alokasi tabunganmu mencapai target.'
+    });
+  }else if(income>0&&savePct===0){
+    insights.push({
+      kind:'warning',
+      priority:58,
+      text:'Belum ada dana yang ditabung bulan ini.'
+    });
+  }
+
+  // 6. Investment habit — maximum 10 points.
+  let investmentContributions=monthTransactions
+    .filter(transaction=>
+      transaction.type==='investment'&&
+      (!transaction.investmentAction||transaction.investmentAction==='contribution')
+    )
+    .reduce((sum,transaction)=>sum+Math.abs(Number(transaction.amount||0)),0);
+
+  breakdown.investment=
+    investmentContributions>0?10:
+    hasInvestments?5:
+    0;
+
+  if(investmentContributions>0){
+    insights.push({
+      kind:'good',
+      priority:50,
+      text:'Investasi bertambah pada bulan ini.'
+    });
+  }else if(!hasInvestments){
+    insights.push({
+      kind:'info',
+      priority:25,
+      text:'Investasi belum mulai dicatat.'
+    });
+  }
+
+  // Debt penalty — maximum deduction 30 points.
+  let activeLiabilities=debts.filter(debt=>
+    debt.direction!=='receivable'&&debtRemaining(debt)>0
+  );
+  let overdueDebts=debts.filter(debtIsOverdue);
+
+  if(overdueDebts.length){
+    breakdown.debtPenalty-=15;
+    insights.push({
+      kind:'warning',
+      priority:95,
+      text:'Ada cicilan yang melewati jadwal.'
+    });
+  }
+
+  if(activeLiabilities.length){
+    let ratioPenalty=
+      debtToAssetRatio>5?30:
+      debtToAssetRatio>2?25:
+      debtToAssetRatio>1?20:
+      debtToAssetRatio>0.5?10:
+      debtToAssetRatio>0.3?5:
+      0;
+
+    breakdown.debtPenalty-=ratioPenalty;
+
+    if(ratioPenalty>=20){
+      insights.push({
+        kind:'warning',
+        priority:92,
+        text:'Rasio hutang terhadap aset sangat tinggi.'
+      });
+    }else if(ratioPenalty>0){
+      insights.push({
+        kind:'warning',
+        priority:72,
+        text:'Rasio hutang masih perlu dikurangi.'
+      });
+    }
   }else{
-    ins.push('! Rasio hutang perlu dikurangi');
+    insights.push({
+      kind:'good',
+      priority:45,
+      text:'Tidak ada hutang aktif.'
+    });
   }
 
-  // Consistency — 10 points
-  if(monthTxns.length>0)score+=5;
-
-  let today=new Date();
-  today.setHours(0,0,0,0);
-  let sevenDaysAgo=new Date(today);
-  sevenDaysAgo.setDate(today.getDate()-6);
-  let hasRecentActivity=allTxns.some(t=>{
-    if(!t.date)return false;
-    let d=new Date(t.date+'T00:00:00');
-    return d>=sevenDaysAgo&&d<=today;
-  });
-  if(hasRecentActivity){
-    score+=5;
-    ins.push('✓ Ada aktivitas dalam 7 hari terakhir');
-  }else{
-    ins.push('○ Catat aktivitas secara rutin');
-  }
+  let score=
+    breakdown.netWorth+
+    breakdown.cashFlow+
+    breakdown.emergencyFund+
+    breakdown.budget+
+    breakdown.saving+
+    breakdown.investment+
+    breakdown.debtPenalty;
 
   score=Math.max(0,Math.min(Math.round(score),100));
 
+  // Hard safety caps: negative net worth cannot be classified as healthy.
+  if(netWorth<0){
+    score=Math.min(score,39);
+  }
+
+  if(overdueDebts.length){
+    score=Math.min(score,39);
+  }
+
   let badge=
-    score>=95?'👑 Financial Master':
-    score>=80?'💎 Sangat Sehat':
-    score>=60?'💙 Sehat':
-    score>=40?'🌤 Bertumbuh':
-    score>=20?'📒 Sedang Menata':
-    '🌱 Baru Memulai';
+    score>=80?'Sangat Sehat':
+    score>=60?'Sehat':
+    score>=40?'Perlu Perhatian':
+    'Tidak Sehat';
 
-  let nextScore=score<20?20:score<40?40:score<60?60:score<80?80:score<95?95:100;
+  let nextScore=
+    score<40?40:
+    score<60?60:
+    score<80?80:
+    100;
 
-  return{score,badge,ins,checklist,needPct,wantPct,savePct,nextScore};
+  let selectedInsights=[];
+  let warning=insights
+    .filter(item=>item.kind==='warning')
+    .sort((a,b)=>b.priority-a.priority)[0];
+
+  let good=insights
+    .filter(item=>item.kind==='good')
+    .sort((a,b)=>b.priority-a.priority)[0];
+
+  let info=insights
+    .filter(item=>item.kind==='info')
+    .sort((a,b)=>b.priority-a.priority)[0];
+
+  if(netWorth<0){
+    selectedInsights.push(
+      insights.find(item=>item.text.startsWith('Net worth negatif'))
+    );
+  }else if(good){
+    selectedInsights.push(good);
+  }
+
+  if(warning&&!selectedInsights.includes(warning)){
+    selectedInsights.push(warning);
+  }
+
+  if(good&&!selectedInsights.includes(good)){
+    selectedInsights.push(good);
+  }
+
+  if(info&&!selectedInsights.includes(info)){
+    selectedInsights.push(info);
+  }
+
+  while(selectedInsights.length<3){
+    selectedInsights.push({
+      kind:'info',
+      text:'Lengkapi pencatatan agar evaluasi makin akurat.'
+    });
+  }
+
+  return{
+    score,
+    badge,
+    ins:selectedInsights.slice(0,3),
+    checklist,
+    needPct,
+    wantPct,
+    savePct,
+    nextScore,
+    breakdown,
+    debtToAssetRatio,
+    emergencyMonths,
+    netWorth
+  };
 }
 function renderOverview(){
   let t=totals(),h=health();
@@ -2550,95 +2837,34 @@ function renderOverview(){
   if(ringEl)ringEl.style.setProperty('--health-score',h.score);
 
   if(badgeEl){
-    let label=h.score>=80?'Sangat Sehat':h.score>=60?'Sehat':h.score>=40?'Perlu Perhatian':'Tidak Sehat';
+    let label=h.badge;
     badgeEl.className='health-badge health-'+(h.score>=80?'excellent':h.score>=60?'healthy':h.score>=40?'growing':h.score>=20?'starting':'attention');
     badgeEl.innerHTML='<span class="health-badge-text">'+label+'</span><i class="health-badge-dot" aria-hidden="true"></i>';
   }
 
   if(messageEl){
     messageEl.textContent=
-      h.score>=80?'Kondisi keuanganmu sangat sehat dan konsisten.':
-      h.score>=60?'Kondisi keuanganmu cukup sehat dan mulai stabil.':
-      h.score>=40?'Keuanganmu mulai tertata, tetapi masih ada bagian yang perlu diperbaiki.':
-      h.score>0?'Kondisi keuanganmu masih perlu banyak perhatian.':
+      h.score>=80?'Kondisi keuanganmu kuat dan relatif stabil.':
+      h.score>=60?'Kondisi keuanganmu cukup sehat, tetapi tetap perlu dijaga.':
+      h.score>=40?'Ada beberapa bagian penting yang masih perlu diperbaiki.':
+      h.score>0?'Kondisi keuanganmu masih membutuhkan perhatian utama.':
       'Mulai catat aktivitas keuanganmu agar kondisi finansial dapat dihitung.';
   }
 
   if(insightEl){
-    let monthTransactions=selectedTxns();
-    let expenseTransactions=monthTransactions.filter(item=>item.type==='expense');
-    let categoryExpenses={};
-
-    expenseTransactions.forEach(item=>{
-      let category=DATA.categories.find(c=>c.id===item.categoryId);
-      let name=category?.name||'Lainnya';
-      categoryExpenses[name]=(categoryExpenses[name]||0)+Math.abs(Number(item.amount||0));
-    });
-
-    let largestExpense=Object.entries(categoryExpenses).sort((a,b)=>b[1]-a[1])[0];
-    let hasActiveAccount=(DATA.accounts||[]).some(account=>Number(accountBalance(account.id))>0);
-    let activeDebts=(DATA.debts||[]).filter(debt=>debt.direction!=='receivable'&&debtRemaining(debt)>0);
-    let overdueDebts=(DATA.debts||[]).filter(debtIsOverdue);
-    let totalAssets=Math.max(t.cash+t.goals+t.inv+t.receivables,0);
-    let debtRatio=totalAssets>0?t.liabilities/totalAssets:0;
-    let netCash=t.income-t.expense-t.saved;
-
-    let information=[];
-    let warnings=[];
-    let good=[];
-
-    information.push(hasActiveAccount?'Rekeningmu sudah aktif.':'Tambahkan saldo rekening.');
-    information.push(monthTransactions.length?'Transaksi mulai tercatat.':'Catat transaksi pertamamu.');
-    information.push((DATA.goals||[]).length?'Target tabunganmu aktif.':'Buat target tabungan.');
-
-    if(t.income>0&&netCash<0)warnings.push('Arus kas bulan ini negatif.');
-
-    if(h.wantPct>Number(DATA.allocation?.want||30)){
-      warnings.push('Pengeluaran keinginan tinggi.');
-    }else if(h.needPct>Number(DATA.allocation?.need||50)){
-      warnings.push('Pengeluaran kebutuhan tinggi.');
-    }
-
-    if(largestExpense&&t.expense>0&&largestExpense[1]/t.expense>=.35){
-      warnings.push('Pengeluaran '+largestExpense[0]+' cukup tinggi.');
-    }
-
-    if(overdueDebts.length){
-      warnings.push('Ada cicilan yang terlambat.');
-    }else if(activeDebts.length&&debtRatio>=.30){
-      warnings.push('Rasio hutang perlu dikurangi.');
-    }
-
-    if(!(DATA.investments||[]).length){
-      warnings.push('Investasi belum mulai dicatat.');
-    }else if(!(DATA.goals||[]).length){
-      warnings.push('Target tabungan belum dibuat.');
-    }else if(t.income>0&&t.saved<=0){
-      warnings.push('Belum ada dana yang ditabung.');
-    }
-
-    if(t.income>0&&netCash>=0)good.push('Pemasukan di atas pengeluaran.');
-    if(t.saved>0)good.push('Tabunganmu mulai konsisten.');
-    if((DATA.investments||[]).length&&t.inv>0)good.push('Investasi mulai berkembang.');
-    if(overdueDebts.length===0)good.push('Tidak ada cicilan terlambat.');
-    if(activeDebts.length===0||debtRatio<.30)good.push('Rasio hutangmu masih sehat.');
-
-    let selected=[
-      {kind:'info',text:information[0]},
-      {kind:warnings.length?'warning':'info',text:warnings[0]||information[1]||'Data keuanganmu mulai lengkap.'},
-      {kind:good.length?'good':'info',text:good[0]||information[2]||'Lanjutkan pencatatan rutin.'}
-    ];
-
     let iconFor=kind=>{
       if(kind==='warning'){
         return '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3.8 19h16.4Z"/><path d="M12 9v4"/><path d="M12 16h.01"/></svg>';
       }
+
       return '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>';
     };
 
-    insightEl.innerHTML=selected.map(item=>{
-      return '<div class="health-indicator '+item.kind+'">'+
-        '<span class="health-indicator-icon">'+iconFor(item.kind)+'</span>'+
+    insightEl.innerHTML=(h.ins||[]).slice(0,3).map(item=>{
+      let kind=item.kind||'info';
+
+      return '<div class="health-indicator '+kind+'">'+
+        '<span class="health-indicator-icon">'+iconFor(kind)+'</span>'+
         '<span>'+item.text+'</span>'+
       '</div>';
     }).join('');
@@ -2871,7 +3097,12 @@ function renderChart(t){
     }
   });
 
-  let expenses=selectedTxns().filter(x=>x.type==='expense');
+  let expenses=selectedTxns().filter(x=>{
+    if(x.type!=='expense')return false;
+    let category=DATA.categories.find(c=>c.id===x.categoryId);
+    return category?.group!=='save';
+  });
+
   let grouped={};
   expenses.forEach(x=>{
     let category=DATA.categories.find(c=>c.id===x.categoryId);
@@ -3264,7 +3495,18 @@ function openDebtPayment(id){
     }
   },0);
 }
-function renderSettings(){categoryList.innerHTML=DATA.categories.map(c=>`<div class="item"><div class="item-main"><div class="emoji">${c.emoji}</div><div><div class="item-title">${c.name}</div><div class="item-meta">${c.group==='need'?'Kebutuhan':'Keinginan'}</div></div></div><button class="iconbtn" onclick="openCategory('${c.id}')">✎</button></div>`).join('');needPct.value=DATA.allocation.need;wantPct.value=DATA.allocation.want;savePct.value=DATA.allocation.save}
+function categoryGroupLabel(group){
+  if(group==='need')return 'Kebutuhan';
+  if(group==='save')return 'Tabungan';
+  return 'Keinginan';
+}
+
+function renderSettings(){
+  categoryList.innerHTML=DATA.categories.map(c=>`<div class="item"><div class="item-main"><div class="emoji">${c.emoji}</div><div><div class="item-title">${c.name}</div><div class="item-meta">${categoryGroupLabel(c.group)}</div></div></div><button class="iconbtn" onclick="openCategory('${c.id}')">✎</button></div>`).join('');
+  needPct.value=DATA.allocation.need;
+  wantPct.value=DATA.allocation.want;
+  savePct.value=DATA.allocation.save;
+}
 function fillSelects(){let acc=DATA.accounts.map(a=>`<option value="${a.id}">${a.emoji||'🏦'} ${a.name}</option>`).join('');txnSource.innerHTML=acc;txnDestAccount.innerHTML=acc;txnInvestmentDestination.innerHTML=acc;txnCategory.innerHTML=DATA.categories.map(c=>`<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('')+'<option value="__debt_payment__">💳 Bayar Hutang / Pinjaman</option>';txnGoal.innerHTML=DATA.goals.map(g=>`<option value="${g.id}">${g.emoji||'🎯'} ${g.name}</option>`).join('');investmentNames.innerHTML=DATA.investments.map(i=>`<option value="${i.name}"></option>`).join('');txnDebtPayment.innerHTML=DATA.debts.filter(d=>d.direction!=='receivable'&&debtRemaining(d)>0).map(d=>`<option value="${d.id}">${d.name} • Sisa ${fmt(debtRemaining(d))}</option>`).join('')}
 function openTransactionWithType(type){openTransaction();setTxnType(type)}
 function openInvestmentActivity(name,action){openTransactionWithType('investment');txnInvestmentName.value=name||'';txnInvestmentAction.value=action||'contribution';onInvestmentActionChange()}
@@ -3411,8 +3653,103 @@ function deleteInvestment(id){
   toast('Investasi dan riwayat terkait berhasil dihapus');
 }
 
-function openCategory(id){let c=DATA.categories.find(x=>x.id===id);openSimple(c?'Edit Kategori':'Tambah Kategori',`<div class="field"><label>Nama</label><input id="sName" value="${c?.name||''}"></div><div class="field"><label>Emoji</label><input id="sEmoji" value="${c?.emoji||'📦'}"></div><div class="field"><label>Budget group</label><select id="sGroup"><option value="need" ${c?.group==='need'?'selected':''}>Kebutuhan</option><option value="want" ${c?.group==='want'?'selected':''}>Keinginan</option></select></div>`,()=>{if(!sName.value.trim())return toast('Nama wajib diisi');let v={name:sName.value.trim(),emoji:sEmoji.value||'📦',group:sGroup.value};if(c)Object.assign(c,v);else DATA.categories.push({id:uid(),...v});save();closeModal('simpleModal');renderAll()})}
-function deleteEntity(k,id){if(!confirm('Hapus data ini? Transaksi lama tidak ikut terhapus.'))return;DATA[k]=DATA[k].filter(x=>x.id!==id);save();renderAll()}
+function ensureFallbackCategory(excludedId){
+  let fallback=DATA.categories.find(category=>
+    category.id!==excludedId&&(
+      category.id==='other'||
+      String(category.name||'').toLowerCase()==='lainnya'
+    )
+  );
+
+  if(!fallback){
+    fallback={
+      id:'other_'+uid(),
+      name:'Lainnya',
+      emoji:'📦',
+      group:'want'
+    };
+    DATA.categories.push(fallback);
+  }
+
+  return fallback;
+}
+
+function deleteCategory(id){
+  let category=DATA.categories.find(item=>item.id===id);
+  if(!category)return toast('Kategori tidak ditemukan');
+
+  let usedCount=DATA.transactions.filter(transaction=>transaction.categoryId===id).length;
+  let message=usedCount
+    ?`Hapus kategori "${category.name}"?\n\n${usedCount} transaksi lama akan dipindahkan ke kategori Lainnya.`
+    :`Hapus kategori "${category.name}"?`;
+
+  if(!confirm(message))return;
+
+  let fallback=ensureFallbackCategory(id);
+
+  DATA.transactions.forEach(transaction=>{
+    if(transaction.categoryId===id){
+      transaction.categoryId=fallback.id;
+    }
+  });
+
+  DATA.categories=DATA.categories.filter(item=>item.id!==id);
+
+  save();
+  closeModal('simpleModal');
+  renderAll();
+  toast('Kategori berhasil dihapus');
+}
+
+function openCategory(id){
+  let category=DATA.categories.find(item=>item.id===id);
+
+  let deleteButton=category
+    ?`<button type="button" class="btn btn-danger category-delete-button" onclick="deleteCategory('${category.id}')">Hapus Kategori</button>`
+    :'';
+
+  openSimple(
+    category?'Edit Kategori':'Tambah Kategori',
+    `<div class="field">
+       <label>Nama</label>
+       <input id="sName" value="${category?.name||''}">
+     </div>
+     <div class="field">
+       <label>Emoji</label>
+       <input id="sEmoji" value="${category?.emoji||'📦'}">
+     </div>
+     <div class="field">
+       <label>Budget group</label>
+       <select id="sGroup">
+         <option value="need" ${category?.group==='need'?'selected':''}>Kebutuhan</option>
+         <option value="want" ${category?.group==='want'?'selected':''}>Keinginan</option>
+         <option value="save" ${category?.group==='save'?'selected':''}>Tabungan</option>
+       </select>
+     </div>
+     ${deleteButton}`,
+    ()=>{
+      if(!sName.value.trim())return toast('Nama wajib diisi');
+
+      let value={
+        name:sName.value.trim(),
+        emoji:sEmoji.value||'📦',
+        group:sGroup.value
+      };
+
+      if(category){
+        Object.assign(category,value);
+      }else{
+        DATA.categories.push({id:uid(),...value});
+      }
+
+      save();
+      closeModal('simpleModal');
+      renderAll();
+      toast(category?'Kategori berhasil diperbarui':'Kategori berhasil ditambahkan');
+    }
+  );
+}
+
 function saveAllocation(){let n=+needPct.value,w=+wantPct.value,s=+savePct.value;if(n+w+s!==100)return toast('Total alokasi harus 100%');DATA.allocation={need:n,want:w,save:s};save();renderAll();toast('Alokasi disimpan')}
 function openModal(id){document.getElementById(id).classList.add('open')}function closeModal(id){document.getElementById(id).classList.remove('open')}function downloadBackup(){let b=new Blob([JSON.stringify(DATA,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='keuanganku-backup.json';a.click()}
 function toggleAuthMode(){
